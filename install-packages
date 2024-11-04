@@ -1,0 +1,34 @@
+#!/bin/bash
+
+# packages variable is a list of packages which will be installed automatically.
+packages=("kakoune" "tmux")
+
+# checks if the option provided is valid
+# can pass additional packages with the flag "-n" which you would also like to install 
+while getopts "n:" opt; do
+	case "${opt}" in
+		n)
+			packages+=("${OPTARG}")
+			;;
+		?)
+			echo "${OPTARG} is not a valid option"
+			exit 1
+			;;
+	esac
+done
+
+# package_install() function installs all the packages in the packages variable.
+# Reference: 
+packages_install() {
+	for package in ${packages[@]}; do
+		if pacman -S --noconfirm ${package}; then
+			echo "${package} installed successfully"
+		else
+			echo "${package} installion failed"
+			exit 1
+		fi
+	done
+}
+
+# calling the function
+packages_install 
