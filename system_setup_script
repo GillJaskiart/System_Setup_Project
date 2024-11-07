@@ -1,0 +1,33 @@
+#!/bin/bash
+
+# check if the script is run as root
+# id command provides user and group information, including UID, GID and supplementary group memberships
+# id -u print only the effective user ID
+# Reference: id man page
+# ! [ $(id -u) = 0 ] checks if the user ID is not 0, i.e., the script is not run as root
+# Reference: https://www.baeldung.com/linux/check-script-run-root
+if ! [ $(id -u) = 0 ]; then
+  echo "Please run this script as root."
+  exit 1
+fi
+
+
+
+while getopts ":ps" opt; do
+	case "${opt}" in
+		p)
+			./install-packages
+			;;
+		s)
+			./create-symbolic-links
+			;;
+		:)
+			echo "Error: -${OPTARG} requires an argument"
+			exit 1
+			;;
+		?)
+			exit 1
+			;;
+	esac
+done
+

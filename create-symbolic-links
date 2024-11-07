@@ -1,0 +1,37 @@
+#!/bin/bash
+
+home_path="/home/$SUDO_USER"
+cloned_dir="${home_path}/2420-as2-starting-files"
+
+create_symbolic_links() {
+	for file in "${cloned_dir}/bin"/*; do
+		local base=$(basename "$file")
+		if [[ ! -e "${home_path}/bin/${base}" ]]; then
+			ln -s "${file}" "${home_path}/bin/${base}"
+			echo "symbolic link created for ${file}"
+		else
+			echo "${home_path}/bin/${base} already exists! Symbolic link not created!"
+		fi
+	done
+
+	for dir in "${cloned_dir}/config"/*; do
+		local base2=$(basename "$dir")
+		if [[ ! -e "${home_path}/.config/$base2" ]]; then
+			ln -s "${dir}" "${home_path}/.config/${base2}"
+			echo "symbolic link created for ${dir}"
+		else
+			echo "${home_path}/.config/${base2} already exists! Symbolic link not created!"
+		fi
+	done
+
+	if [[ ! -e "${home_path}/.bashrc" ]]; then
+		ln -s "${cloned_dir}/home/bashrc" "${home_path}/.bashrc"
+		echo "symbolic link created for ${cloned_dir}/home/bashrc"
+	else
+		echo "${home_path}/.bashrc already exists! Synbolic link not created"
+	fi
+
+}
+
+# calling the function to crete the symbolic links
+create_symbolic_links
