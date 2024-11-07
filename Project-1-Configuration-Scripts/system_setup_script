@@ -13,7 +13,7 @@ fi
 
 
 
-while getopts ":ps" opt; do
+while getopts "ps" opt; do
 	case "${opt}" in
 		p)
 			./install-packages
@@ -21,11 +21,8 @@ while getopts ":ps" opt; do
 		s)
 			./create-symbolic-links
 			;;
-		:)
-			echo "Error: -${OPTARG} requires an argument"
-			exit 1
-			;;
 		?)
+			echo "Invalid option! Use -p to install packages and -s to create symbolic links!"
 			exit 1
 			;;
 	esac

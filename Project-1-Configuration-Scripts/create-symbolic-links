@@ -1,6 +1,6 @@
 #!/bin/bash
 
-home_path="/home/$SUDO_USER"
+home_path="/home/$SUDO_USER" 
 cloned_dir="${home_path}/2420-as2-starting-files"
 
 create_symbolic_links() {
@@ -10,7 +10,8 @@ create_symbolic_links() {
 			ln -s "${file}" "${home_path}/bin/${base}"
 			echo "symbolic link created for ${file}"
 		else
-			echo "${home_path}/bin/${base} already exists! Symbolic link not created!"
+			ln -sf "${file}" "${home_path}/bin/${base}"
+			echo "${home_path}/bin/${base} already exists! Contents were overwritten"
 		fi
 	done
 
@@ -20,7 +21,8 @@ create_symbolic_links() {
 			ln -s "${dir}" "${home_path}/.config/${base2}"
 			echo "symbolic link created for ${dir}"
 		else
-			echo "${home_path}/.config/${base2} already exists! Symbolic link not created!"
+			ln -sf "${dir}" "${home_path}/.config/${base2}"
+			echo "${home_path}/.config/${base2} already exists! Contents were overwritten!"
 		fi
 	done
 
@@ -28,9 +30,9 @@ create_symbolic_links() {
 		ln -s "${cloned_dir}/home/bashrc" "${home_path}/.bashrc"
 		echo "symbolic link created for ${cloned_dir}/home/bashrc"
 	else
-		echo "${home_path}/.bashrc already exists! Synbolic link not created"
+		ln -sf "${cloned_dir}/home/bashrc" "${home_path}/.bashrc"
+		echo "${home_path}/.bashrc already exists! Contents were overwritten!"
 	fi
-
 }
 
 # calling the function to crete the symbolic links
