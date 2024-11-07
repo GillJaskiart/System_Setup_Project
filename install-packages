@@ -1,25 +1,14 @@
 #!/bin/bash
 
 # packages variable is a list of packages which will be installed automatically.
-packages=("kakoune" "tmux")
+# Reference:
+packages=`cat ./package_names.txt`
 
-# checks if the option provided is valid
-# can pass additional packages with the flag "-n" which you would also like to install 
-while getopts "n:" opt; do
-	case "${opt}" in
-		n)
-			packages+=("${OPTARG}")
-			;;
-		?)
-			echo "${OPTARG} is not a valid option"
-			exit 1
-			;;
-	esac
-done
 
-# package_install() function installs all the packages in the packages variable.
-# Reference: 
-packages_install() {
+# installs all the packages in the packages variable.
+# Reference for use of arrays: https://www.shell-tips.com/bash/arrays/
+# Reference for pacman -S --noconfirm: pacman man page
+install_packages() {
 	for package in ${packages[@]}; do
 		if pacman -S --noconfirm ${package}; then
 			echo "${package} installed successfully"
@@ -30,5 +19,5 @@ packages_install() {
 	done
 }
 
-# calling the function
-packages_install 
+# calling the function to install all the packages
+install_packages 
