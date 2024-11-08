@@ -6,13 +6,18 @@
 # Reference: id man page
 # ! [ $(id -u) = 0 ] checks if the user ID is not 0, i.e., the script is not run as root
 # Reference: https://www.baeldung.com/linux/check-script-run-root
+#
 if ! [ $(id -u) = 0 ]; then
   echo "Please run this script as root."
   exit 1
 fi
 
 
-
+# this scripts accepts 2 options p and s
+# p option executes the install-packages script
+# s option executes the create-symbolic-links script
+# If an invalid option is provided, the user is notified
+# 
 while getopts "ps" opt; do
 	case "${opt}" in
 		p)
