@@ -1,1 +1,2 @@
-kakoune tmux
+kakoune
+tmux
