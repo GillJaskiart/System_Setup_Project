@@ -33,6 +33,7 @@ while getopts ":u:s:g:" opt; do
 			# The if statement finds the first instance of the username provided as the argument. The colon in the pattern ensures that only the username is selected and not the groupname, as the groupname in /etc/passwd file does not end with a colon
 			# -q option for grep runs it in silent mode
 			# Reference for -q: grep man page
+			
 			if grep -q "^${OPTARG}:" /etc/passwd; then
 				echo "The username {OPTARG} already exist!"
 				exit 1
@@ -70,6 +71,11 @@ done
 # create_username function creates a unique username
 create_username() {
 	for ((i = 1 ; i <= 100; i++)); do
+
+		# -q option for grep runs it in silent mode
+		# Reference for -q: grep man page
+		# this if block checks if the uesrname does not exist and then increment the the variable i by 1 until a unique usename is found
+
 		if ! grep -q "^user$i:" /etc/passwd; then
 			username="user$i"
 			break
@@ -79,79 +85,99 @@ create_username() {
 
 
 # if no username was provided, a unique username is created
+
 if [[ -z "$username" ]]; then
 	echo "
-	no arguments were provided!
-	default configuration will be done for the new user
+	No arguments were provided!
+	Default configuration will be done for the new user
 	"
 	create_username
-	echo "No username provided! Default usernmae is $username"
+	echo "Default usernmae is $username"
 fi
 
 
 
-# the normal user ID start from 1000 so the variable UID is assigned 1000 for the while loop to start from 1000
+# the normal user ID start from 1000 so the variable USER_ID is assigned 1000 for the while loop to start from 1000
+
 USER_ID=1000
 
-# grep -q checks this pattern quitely and find the UID if it exist in the /etc/passwd file
-# the loop runs until it finds the largest UID and it increments it by 1 to create a new and unique user ID
+# grep -q checks this pattern quitely and find the USER_ID if it exist in the /etc/passwd file
+# the loop runs until it finds the largest USER_ID and it increments it by 1 to create a new and unique user ID
+
 create_uid() {
 	while grep -q ":x:${USER_ID}:" /etc/passwd; do
 		((USER_ID++))
 	done
 }
+
 # calling the function to create a uniue UID
 create_uid
 
 
 
-# group ID assigned the same value as user ID because a unique primary group will be created for every uesr
+# group ID assigned the same value as USER_ID because a unique primary group will be created for every uesr
+
 GROUP_ID=$USER_ID
 create_gid() {
 	while grep -q ":x:${GROUP_ID}:" /etc/group; do
 		((GROUP_ID++))
 	done
 }
-# calling the create_gid funciton to get a unique GID
+
+# calling the create_gid funciton to get a unique GROUP_ID
+
 create_gid
 
 
 
 # this sting which will get appended to the /etc/group file, which stores information about the groups
 # this will create a primary group for the user
+
 echo "${username}:x:${GROUP_ID}:" >> /etc/group
 
 
 
 # this string which will get appended to the /etc/passwd file,which stores information about the users: username, password, UID, GID, GECOS real name of the user, home directory, and login shell
 # this will create a new user
+
 echo "${username}:x:${USER_ID}:${GROUP_ID}:${username}:/home/${username}:${shell}" >> /etc/passwd
 
 
 
 # making the home directory for the new user
+
 mkdir -p "/home/${username}"
 
 
 
 # the contents of /etc/skel directory copied into the new user's home directory 
+
 cp -r /etc/skel/. "/home/${username}"
 
 
 # set ownership of the new user's home directory to the new user
+
 chown -R "${username}:${username}" "/home/${username}"
 
 
 # the additional groups are provided, the group name us checked it it exit and the user is added to the group
+
 if [[ -n "$groups" ]]; then
 	for group in ${groups}; do
 		if grep -q "^${group}" /etc/group; then
+		
 			# if the group already exist, the user is added to the group
+			# Reference for sed command usage: https://www.hostafrica.ke/blog/web-tutorials/linux-basics-sed/
+			# sed is short for stream editor. It is used to perform basic text transformations on files.
+			# with -i option it enables to directly modify the file /etc/group
+			# it is using the pattern inside the forward slashes and appends the username at the end
+			
 			sed -i "/^${group}:/s/$/,${username}/" /etc/group
 		else
 			# calling the create_gid function to create a unique group ID
 			create_gid
 			# creating the group because it does not exit
+			
 			echo "${group}:x:${GROUP_ID}:${username}" >> /etc/group
 		fi
 	done		
@@ -159,14 +185,21 @@ fi
 
 
 # function to ask the user to provide a password
+# Reference for passwd utility: man page for passwd
+
 set_password() {
 	echo "Provide a password for ${username}"
 	passwd "${username}"
 }
+
+
 # calling the function
+
 set_password
 
 
+
 # user is notified and the information about the new user is echoed
+
 echo "the new user ${username} has been created! the home directory is '/home/${username}'!
 ${username} is a member of ${username}, ${groups} groups!"
