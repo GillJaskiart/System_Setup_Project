@@ -1,0 +1,23 @@
+#!/bin/bash
+
+# packages variable is a list of packages which will be installed automatically.
+# Reference:
+packages=($(cat ./package_names.txt))
+
+
+# installs all the packages in the packages variable.
+# Reference for use of arrays: https://www.shell-tips.com/bash/arrays/
+# Reference for pacman -S --noconfirm: pacman man page
+install_packages() {
+	for package in ${packages[@]}; do
+		if pacman -S --noconfirm ${package}; then
+			echo "${package} installed successfully"
+		else
+			echo "${package} installion failed"
+			exit 1
+		fi
+	done
+}
+
+# calling the function to install all the packages
+install_packages 
