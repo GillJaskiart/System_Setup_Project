@@ -1,0 +1,150 @@
+#!/bin/bash
+
+# check if the script is run as root
+# id command provides user and group information, including UID, GID and supplementary group memberships
+# id -u print only the effective user ID
+# Reference: id man page
+# ! [ $(id -u) = 0 ] checks if the user ID is not 0, i.e., the script is not run as root
+# Reference: https://www.baeldung.com/linux/check-script-run-root
+#
+if ! [ $(id -u) = 0 ]; then
+  echo "Please run this script as root."
+  exit 1
+fi
+
+
+# variables to store or add information for the new user
+username=""
+
+# /bin/bash is the default shell if the user does not provide a shell
+shell="/bin/bash"
+
+groups=""
+
+
+# this scripts accepts 3 options: -u for username, -s for shell, and -g for groups
+# if an invalid option is provided, the user is notified
+# 
+while getopts ":u:s:g:" opt; do
+	case "${opt}" in
+		u)
+			# for username
+			# Reference for ^: https://www.digitalocean.com/community/tutorials/using-grep-regular-expressions-to-search-for-text-patterns-in-linux
+			# The if statement finds the first instance of the username provided as the argument. The colon in the pattern ensures that only the username is selected and not the groupname, as the groupname in /etc/passwd file does not end with a colon
+			# -q option for grep runs it in silent mode
+			# Reference for -q: grep man page
+			if grep -q "^${OPTARG}:" /etc/passwd; then
+				echo "The username {OPTARG} already exist!"
+				exit 1
+			fi
+			
+			# if the provided username is not taken, the username variable will store the provided positional argument
+			username="${OPTARG}"
+			;;
+		s)
+			# for specified shell
+			default_shell="${OPTARG}"
+			;;
+		g)
+			# to add the user to additional groups
+			default_group="${username}"
+			groups="${OPTARG}"
+			;;
+		:)
+			echo "Option -${OPTARG} requires an argument"
+			exit 1
+			;;
+		?)
+			echo "
+			Invalid option!
+			The valid options are:
+			-u	to create a username
+			-s	for specified shell
+			-p	to add user to additional groups"
+			exit 1
+			;;
+	esac
+done
+
+
+
+if [[ -z "$username" ]]; then
+	echo "
+	no arguments were provided!
+	default configuration will be done for the new user
+	"
+	for ((i = 1 ; i <= 1000; i++)); do
+		if grep -q "^user$i:" /etc/passwd; then
+			continue
+		fi
+		username="user$i"
+		break
+	done
+	echo "No username provided! Default usernmae is $username"
+fi
+
+# the normal user ID start from 1000 so the variable UID is assigned 1000 for the while loop to start from 1000
+UID=1000
+
+# grep -q checks this pattern quitely and find the UID if it exist in the /etc/passwd file
+# the loop runs until it finds the largest UID and it increments it by 1 to create a new and unique user ID
+create_uid() {
+	while grep -q "^[^:]*:[^:]*:${UID}:" /etc/passwd; do
+		((UID++))
+	done
+}
+# creating a uniue UID
+create_uid
+
+
+# group ID assigned the same value as user ID because a unique primary group will be created for every uesr
+GID=$UID
+create_gid() {
+	while grep -q "^[^:]*:[^:]*:${GID}:" /etc/group; do
+		((GID++))
+	done
+}
+# calling the create_gid funciton to get a unique GID
+create_gid
+
+
+# this sting which will get appended to the /etc/group file, which stores information about the groups
+# this will create a primary group for the user
+echo "${username}:x:${GID}:" >> /etc/group
+
+# this string which will get appended to the /etc/passwd file,which stores information about the users: username, password, UID, GID, GECOS real name of the user, home directory, and login shell
+# this will create a new user
+echo "${username}:x:${UID}:${GID}:${username}:/home/${username}:${shell}" >> /etc/passwd
+
+# making the home directory for the user
+mkdir -p "/home/${username}"
+
+
+# the contents of /etc/skel directory copied into the new uesr home directory 
+cp -r /etc/skel/. "/home/${username}"
+
+# ownership of the new home directory for the new user is modified to make new user and its primary group the owner
+chown -R "${username}:${username}" "/home/${username}"
+
+
+if [[ -n "$groups" ]]; then
+	for group in ${groups}; do
+		if grep -q "^${group}" /etc/group; then
+			# because the group already exist, the user is added
+			sed -i "/^${group}:/s/$/,${username}/" /etc/group
+		else
+			# calling the create_gid function to create a unique group ID
+			create_gid
+			# creating the group because it does not exit
+			echo "${group}:x:${GID}:${username}" >> /etc/group
+		fi
+	done		
+fi
+
+set_password() {
+	echo "Provide a password for ${username}"
+	passwd "${username}"
+}
+
+echo "the new user ${username} has been created! the home directory is '/home/${username}'!
+${username} is a member of ${} groups!"
