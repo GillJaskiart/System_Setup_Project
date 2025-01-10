@@ -1,5 +1,5 @@
-# ACIT2420 assignment2
-Assignment 2 - ACIT2420
+# System Setup Project
+ACIT2420
 Name: Jaskirat Gill
 Student ID: A01349758
 
